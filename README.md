@@ -1,0 +1,2 @@
+# diagnostico clinico
+diagnostico clinico
