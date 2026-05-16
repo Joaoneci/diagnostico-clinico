@@ -1,0 +1,43 @@
+name: curso-ex24-medico
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: medico
+      POSTGRES_PASSWORD: medico
+      POSTGRES_DB: clinicadb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init_db:/docker-entrypoint-initdb.d:ro
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medico -d clinicadb"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
+
+  streamlit:
+    build:
+      context: ..
+      dockerfile: 24_rag_medico_langgraph_ecra/Dockerfile
+    ports:
+      - "${STREAMLIT_PORT:-8502}:8501"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ../../.env
+    volumes:
+      - ../../.env:/app/.env:ro
+      - ex24_chroma:/app/chroma_medico
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      DATABASE_URL: postgresql://medico:medico@db:5432/clinicadb
+      PYTHONUNBUFFERED: "1"
+
+volumes:
+  db_data: {}
+  ex24_chroma: {}
